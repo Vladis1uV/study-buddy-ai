@@ -33,12 +33,10 @@ async def upload_document(file: UploadFile = File(...)):
         logging.warning(f"Attempting to upload file without a name.")
         raise HTTPException(status_code=400, detail="No filename provided")
 
-    logging.info(f"Calling Document serviece to process document: {file.filename}")
 
     content = await file.read()
     document_id = document_service.process_document(file.filename, content)
 
-    logging.info(f"Document processed: {document_id}")
     return {"document_id": document_id, "filename": file.filename}
 
 
