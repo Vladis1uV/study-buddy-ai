@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from service.document_service import DocumentService
 from service.qa_service import QAService
 
+import logging
+
 router = APIRouter()
 
 document_service = DocumentService()
@@ -28,16 +30,27 @@ class AskResponse(BaseModel):
 async def upload_document(file: UploadFile = File(...)):
     """Upload a document for RAG processing."""
     if not file.filename:
+        logging.warning(f"Attempting to upload file without a name.")
         raise HTTPException(status_code=400, detail="No filename provided")
+
+    logging.info(f"Calling Document serviece to process document: {file.filename}")
 
     content = await file.read()
     document_id = document_service.process_document(file.filename, content)
 
+    logging.info(f"Document processed: {document_id}")
     return {"document_id": document_id, "filename": file.filename}
 
 
 @router.post("/ask", response_model=AskResponse)
 async def ask_question(req: AskRequest):
     """Ask a question about a previously uploaded document."""
-    answer, sources = qa_service.ask(req.document_id, req.question)
+
+    if not req.question or not req.document_id:
+        logging.warning(f"Invalid request: {req}")
+        raise HTTPException(status_code=400, detail="Both document_id and question are required")
+
+    answer, sources = await qa_service.ask(req.document_id, req.question)
+
+    logging.info(f"Question asked: {req.question} | Answer: {answer} | Sources: {sources}")
     return AskResponse(answer=answer, sources=sources)
