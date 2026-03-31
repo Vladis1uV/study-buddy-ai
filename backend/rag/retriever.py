@@ -1,8 +1,9 @@
 """
 Vector store retrieval.
-TODO: Implement with FAISS, ChromaDB, or similar.
 """
 
+import faiss
+import numpy as np
 
 class Retriever:
     def __init__(self):
@@ -20,7 +21,11 @@ class Retriever:
         if document_id not in self.store:
             return []
 
-        # TODO: Implement proper similarity search (cosine similarity)
-        # For now, return first top_k chunks
         entries = self.store[document_id]
-        return [e["text"] for e in entries[:top_k]]
+
+        index = faiss.IndexFlatL2(entries[0]["embedding"].shape[0])
+        index.add(np.array([e["embedding"] for e in entries], dtype=np.float32))
+
+        distances, indices = index.search(np.array([query_embedding], dtype=np.float32), top_k)
+
+        return [entries[i]["text"] for i in indices[0]] # Should add safe check for indices length

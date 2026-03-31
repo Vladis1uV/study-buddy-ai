@@ -22,8 +22,7 @@ class QAService:
         chunks = self.retriever.retrieve(document_id, query_embedding)
 
         if not chunks:
-            return "I couldn't find relevant information in the document.", []
-
+            raise ValueError("No relevant chunks found for the given document and question.")
         # Generate answer
         answer = self.generator.generate(question, chunks)
 
