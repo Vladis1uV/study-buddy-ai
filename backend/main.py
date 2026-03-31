@@ -2,11 +2,16 @@
 Study Assistant Backend - Entry Point
 Run: uvicorn main:app --reload --port 8000
 """
-
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes import router as api_router
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 app = FastAPI(
     title="Study Assistant API",
