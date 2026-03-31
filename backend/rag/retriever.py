@@ -1,9 +1,11 @@
 """
 Vector store retrieval.
 """
-
 import faiss
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Retriever:
     def __init__(self):
@@ -19,13 +21,22 @@ class Retriever:
     def retrieve(self, document_id: str, query_embedding: list[float], top_k: int = 3) -> list[str]:
         """Retrieve top-k relevant chunks for a query."""
         if document_id not in self.store:
-            return []
+            logger.warning(f"Available document IDs: {list(self.store.keys())}")
+            logger.error(f"Document ID not found: {document_id}")
+            raise ValueError(f"Document ID not found: {document_id}")
 
+        logger.info(f"Retrieving chunks for document: {document_id}")
         entries = self.store[document_id]
-
-        index = faiss.IndexFlatL2(entries[0]["embedding"].shape[0])
+        logger.info(f"Number of chunks available: {len(entries)}")        
+        
+        index = faiss.IndexFlatL2(len(entries[0]["embedding"]))
         index.add(np.array([e["embedding"] for e in entries], dtype=np.float32))
 
         distances, indices = index.search(np.array([query_embedding], dtype=np.float32), top_k)
 
+        logger.info(f"{indices.shape[1]} chunks retrieved for document: {document_id}")
+        
+        logger.info(f"Shape of indices[0]: {len(indices[0])}")
         return [entries[i]["text"] for i in indices[0]] # Should add safe check for indices length
+    
+retriever = Retriever()

@@ -48,7 +48,7 @@ async def ask_question(req: AskRequest):
         logging.warning(f"Invalid request: {req}")
         raise HTTPException(status_code=400, detail="Both document_id and question are required")
 
-    answer, sources = await qa_service.ask(req.document_id, req.question)
+    answer, sources = qa_service.ask(req.document_id, req.question)
 
     logging.info(f"Question asked: {req.question} | Answer: {answer} | Sources: {sources}")
     return AskResponse(answer=answer, sources=sources)

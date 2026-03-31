@@ -5,11 +5,9 @@ Document processing service - orchestrates chunking, embedding, and indexing.
 import logging
 import uuid
 
-from sympy import content
-
 from backend.rag.chunker import DocumentChunker
 from backend.rag.embedder import Embedder
-from backend.rag.retriever import Retriever
+from backend.rag.retriever import retriever
 from backend.utils.parser import ParserFactory
 
 logger = logging.getLogger(__name__)
@@ -18,7 +16,7 @@ class DocumentService:
     def __init__(self):
         self.chunker = DocumentChunker()
         self.embedder = Embedder()
-        self.retriever = Retriever()
+        self.retriever = retriever
 
     def process_document(self, filename: str, content: bytes) -> str:
         """Process an uploaded document: parse, chunk, embed, and index."""
@@ -42,7 +40,10 @@ class DocumentService:
         embeddings = self.embedder.embed(chunks)
         
         logger.info(f"Embeddings generated successfully: {filename} | ID: {document_id} | Embedding length: {len(embeddings)}")
+        logger.info(f"Indexing document: {filename} | ID: {document_id}")
         
         self.retriever.index(document_id, chunks, embeddings)
+        
+        logger.info(f"Document indexed successfully: {filename} | ID: {document_id}")
 
         return document_id
