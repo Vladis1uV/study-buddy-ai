@@ -7,10 +7,10 @@ import uuid
 
 from sympy import content
 
-from rag.chunker import DocumentChunker
-from rag.embedder import Embedder
-from rag.retriever import Retriever
-from utils.parser import ParserFactory
+from backend.rag.chunker import DocumentChunker
+from backend.rag.embedder import Embedder
+from backend.rag.retriever import Retriever
+from backend.utils.parser import ParserFactory
 
 class DocumentService:
     def __init__(self):

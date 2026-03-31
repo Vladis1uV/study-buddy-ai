@@ -2,9 +2,9 @@
 Q&A service - orchestrates retrieval and generation.
 """
 
-from rag.embedder import Embedder
-from rag.retriever import Retriever
-from rag.generator import Generator
+from backend.rag.embedder import Embedder
+from backend.rag.retriever import Retriever
+from backend.rag.generator import Generator
 
 
 class QAService:

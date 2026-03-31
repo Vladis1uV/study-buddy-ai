@@ -5,8 +5,8 @@ API Routes - handles HTTP requests and delegates to services.
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
 
-from service.document_service import DocumentService
-from service.qa_service import QAService
+from backend.service.document_service import DocumentService
+from backend.service.qa_service import QAService
 
 import logging
 

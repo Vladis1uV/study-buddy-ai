@@ -1,6 +1,5 @@
 """
 Document chunking strategies.
-TODO: Implement your chunking logic (e.g., RecursiveCharacterTextSplitter).
 """
 
 
@@ -11,11 +10,9 @@ class DocumentChunker:
 
     def chunk(self, text: str) -> list[str]:
         """Split text into overlapping chunks."""
-        # TODO: Replace with a proper chunking strategy
         chunks = []
-        start = 0
-        while start < len(text):
-            end = start + self.chunk_size
-            chunks.append(text[start:end])
-            start += self.chunk_size - self.chunk_overlap
+        for i in range(0, len(text), self.chunk_size - self.chunk_overlap):
+            chunk = text[i : i + self.chunk_size]
+            chunks.append(chunk)
+        
         return chunks
