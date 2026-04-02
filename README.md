@@ -2,42 +2,16 @@
 
 A full-stack, end-to-end MLOps project that lets students upload lecture notes and ask questions answered by a RAG (Retrieval-Augmented Generation) pipeline powered by a self-hosted LLM.
 
-## Architecture
-
-```
-┌─────────────┐     ┌──────────────────────────────────────────────┐
-│   Frontend   │────▶│                  Backend (FastAPI)            │
-│  React/Vite  │◀────│                                              │
-└─────────────┘     │  ┌─────────┐  ┌─────────┐  ┌─────────────┐  │
-                    │  │ API      │─▶│ Service  │─▶│ RAG Pipeline│  │
-                    │  │ Routes   │  │ Layer    │  │             │  │
-                    │  └─────────┘  └─────────┘  │ • Chunker   │  │
-                    │                             │ • Embedder  │  │
-                    │                             │ • Retriever │  │
-                    │                             │ • Generator │  │
-                    │                             └──────┬──────┘  │
-                    └────────────────────────────────────┼─────────┘
-                                                        │
-                                              ┌─────────▼─────────┐
-                                              │   RunPod (LLM)    │
-                                              │   GPU Inference    │
-                                              └───────────────────┘
-
-Future additions:
-  • MLflow  — experiment tracking & model registry
-  • Airflow — pipeline orchestration & scheduling
-```
-
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | Python, FastAPI, Uvicorn |
-| RAG | sentence-transformers, FAISS, pdfplumber, python-docx |
-| LLM Hosting | RunPod (serverless GPU inference) |
-| Containerization | Docker, Docker Compose |
-| MLOps (planned) | MLflow, Apache Airflow |
+| Layer            | Technology                                            |
+| ---------------- | ----------------------------------------------------- |
+| Frontend         | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui   |
+| Backend          | Python, FastAPI, Uvicorn                              |
+| RAG              | sentence-transformers, FAISS, pdfplumber, python-docx |
+| LLM Hosting      | RunPod (serverless GPU inference)                     |
+| Containerization | Docker, Docker Compose                                |
+| MLOps (planned)  | MLflow, Apache Airflow                                |
 
 ## Project Structure
 
@@ -90,10 +64,10 @@ The frontend runs on `http://localhost:5173` and expects the backend at `http://
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/upload` | Upload a document (PDF, TXT, MD, DOCX) |
-| POST | `/api/ask` | Ask a question about an uploaded document |
+| Method | Endpoint      | Description                               |
+| ------ | ------------- | ----------------------------------------- |
+| POST   | `/api/upload` | Upload a document (PDF, TXT, MD, DOCX)    |
+| POST   | `/api/ask`    | Ask a question about an uploaded document |
 
 ## How It Works
 
