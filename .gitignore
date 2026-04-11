@@ -26,3 +26,10 @@ dist-ssr
 # Model files
 model
 !model/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+
+#Claude
+.claude
