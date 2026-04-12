@@ -3,6 +3,7 @@ Embedding generation using ONNX Runtime for lightweight inference.
 """
 
 import logging
+
 import onnxruntime as ort
 from transformers import AutoTokenizer
 

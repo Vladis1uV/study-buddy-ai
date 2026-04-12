@@ -1,18 +1,17 @@
-
-from abc import ABC, abstractmethod
 import io
+from abc import ABC, abstractmethod
+
 
 class Parser(ABC):
-
     @abstractmethod
     def parse(self, content: bytes) -> str:
         pass
 
 
 class PDFParser(Parser):
-
     def parse(self, content: bytes) -> str:
         import pdfplumber
+
         text = ""
 
         with pdfplumber.open(io.BytesIO(content)) as pdf:
@@ -21,19 +20,21 @@ class PDFParser(Parser):
 
         return text
 
-class DOCXParser(Parser):
 
-    def parse(self,content: bytes) -> str:
+class DOCXParser(Parser):
+    def parse(self, content: bytes) -> str:
         import docx
+
         doc = docx.Document(io.BytesIO(content))
+        text = ""
 
         for page in doc.paragraphs:
             text += page.text + "\n"
 
         return text
 
-class ParserFactory:
 
+class ParserFactory:
     @staticmethod
     def get_parser(content: bytes) -> Parser:
         if content.startswith(b"%PDF"):

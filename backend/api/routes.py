@@ -2,13 +2,13 @@
 API Routes - handles HTTP requests and delegates to services.
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+import logging
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from backend.service.document_service import DocumentService
 from backend.service.qa_service import QAService
-
-import logging
 
 router = APIRouter()
 
@@ -30,9 +30,8 @@ class AskResponse(BaseModel):
 async def upload_document(file: UploadFile = File(...)):
     """Upload a document for RAG processing."""
     if not file.filename:
-        logging.warning(f"Attempting to upload file without a name.")
+        logging.warning("Attempting to upload file without a name.")
         raise HTTPException(status_code=400, detail="No filename provided")
-
 
     content = await file.read()
     document_id = document_service.process_document(file.filename, content)

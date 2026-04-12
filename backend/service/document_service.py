@@ -12,6 +12,7 @@ from backend.utils.parser import ParserFactory
 
 logger = logging.getLogger(__name__)
 
+
 class DocumentService:
     def __init__(self):
         self.chunker = DocumentChunker()
@@ -20,8 +21,7 @@ class DocumentService:
 
     def process_document(self, filename: str, content: bytes) -> str:
         """Process an uploaded document: parse, chunk, embed, and index."""
-        
-        
+
         document_id = str(uuid.uuid4())
 
         logger.info(f"Parsing document: {filename} | ID: {document_id}")
@@ -31,19 +31,19 @@ class DocumentService:
 
         logger.info(f"Document parsed successfully: {filename} | ID: {document_id} | Length: {len(text)} characters")
         logger.info(f"Chunking document: {filename} | ID: {document_id}")
-        
+
         chunks = self.chunker.chunk(text)
-        
+
         logger.info(f"Document chunked successfully: {filename} | ID: {document_id} | Chunk Count: {len(chunks)}")
         logger.info(f"Generating embeddings for document: {filename} | ID: {document_id}")
-        
+
         embeddings = self.embedder.embed(chunks)
-        
-        logger.info(f"Embeddings generated successfully: {filename} | ID: {document_id} | Embedding length: {len(embeddings)}")
+
+        logger.info(f"Embeddings generated: {filename} | ID: {document_id} | count: {len(embeddings)}")
         logger.info(f"Indexing document: {filename} | ID: {document_id}")
-        
+
         self.retriever.index(document_id, chunks, embeddings)
-        
+
         logger.info(f"Document indexed successfully: {filename} | ID: {document_id}")
 
         return document_id

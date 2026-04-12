@@ -1,11 +1,13 @@
 """
 Q&A service - orchestrates retrieval and generation.
 """
-from backend.rag.embedder import Embedder
-from backend.rag.retriever import retriever
-from backend.rag.generator import Generator
 
 import logging
+
+from backend.rag.embedder import Embedder
+from backend.rag.generator import Generator
+from backend.rag.retriever import retriever
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +26,7 @@ class QAService:
         query_embedding = self.embedder.embed([question])[0]
 
         logger.info(f"Query: {question} | Embedding completed - {len(query_embedding)} dimensions.")
-        logger.info(f"Chunks retrieval started.")
+        logger.info("Chunks retrieval started.")
         # Retrieve relevant chunks
         chunks = self.retriever.retrieve(document_id, query_embedding)
 
@@ -34,10 +36,10 @@ class QAService:
             raise ValueError("No relevant chunks found for the given document and question.")
         # Generate answer
 
-        logger.info(f"Answer generation started.")
+        logger.info("Answer generation started.")
 
         answer = self.generator.generate(question, chunks)
 
-        logger.info(f"Answer generation completed.")
+        logger.info("Answer generation completed.")
 
         return answer, chunks

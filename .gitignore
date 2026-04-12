@@ -23,9 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Model files
+# Model files — downloaded at Docker build time, never committed
 model
-!model/.gitkeep
 
 # Python
 __pycache__/

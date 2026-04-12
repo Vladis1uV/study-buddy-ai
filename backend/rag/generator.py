@@ -15,7 +15,8 @@ class Generator:
         """Generate an answer using the LLM with retrieved context."""
         context = "\n\n".join(context_chunks)
 
-        prompt = f"""You are a helpful study assistant. Answer the question based ONLY on the provided context from lecture notes.
+        _prompt = f"""You are a helpful study assistant. \
+Answer the question based ONLY on the provided context from lecture notes.
 
 Context:
 {context}

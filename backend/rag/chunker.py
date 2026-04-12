@@ -14,5 +14,5 @@ class DocumentChunker:
         for i in range(0, len(text), self.chunk_size - self.chunk_overlap):
             chunk = text[i : i + self.chunk_size]
             chunks.append(chunk)
-        
+
         return chunks
