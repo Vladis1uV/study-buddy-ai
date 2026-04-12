@@ -1,96 +1,98 @@
-# 📚 Study Assistant
+# Study Buddy AI
 
-A full-stack, end-to-end MLOps project that lets students upload lecture notes and ask questions answered by a RAG (Retrieval-Augmented Generation) pipeline powered by a self-hosted LLM.
+A full-stack RAG (Retrieval-Augmented Generation) application that lets students upload lecture notes and get answers grounded in their own material — not generic LLM knowledge.
+
+## Goals
+
+- Build an end-to-end MLOps project covering the full lifecycle: data ingestion, vector search, LLM inference, and containerized deployment
+- Keep the stack self-contained and reproducible — the embedding model is baked into the Docker image, no external model servers required
+- Serve as a practical foundation for adding experiment tracking (MLflow) and pipeline orchestration (Airflow)
 
 ## Tech Stack
 
-| Layer            | Technology                                            |
-| ---------------- | ----------------------------------------------------- |
-| Frontend         | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui   |
-| Backend          | Python, FastAPI, Uvicorn                              |
-| RAG              | sentence-transformers, FAISS, pdfplumber, python-docx |
-| LLM Hosting      | RunPod (serverless GPU inference)                     |
-| Containerization | Docker, Docker Compose                                |
-| MLOps (planned)  | MLflow, Apache Airflow                                |
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui |
+| Backend | Python, FastAPI |
+| Embeddings | ONNX Runtime (all-MiniLM-L6-v2) |
+| Vector search | FAISS |
+| Document parsing | pdfplumber, python-docx |
+| LLM inference | RunPod (serverless GPU) |
+| Containerization | Docker, Docker Compose |
+| CI/CD | GitHub Actions, GHCR |
 
 ## Project Structure
 
 ```
-├── src/                    # React frontend
-│   ├── components/         # UI components (FileUpload, Chat, etc.)
-│   └── pages/              # Page components
+├── src/                      # React frontend
+│   ├── components/           # UI components
+│   └── pages/                # Page components
 ├── backend/
-│   ├── api/                # FastAPI route handlers
-│   ├── service/            # Business logic orchestration
-│   ├── rag/                # RAG pipeline modules
-│   │   ├── chunker.py      # Document chunking
-│   │   ├── embedder.py     # Text → vector embeddings
-│   │   ├── retriever.py    # FAISS similarity search
-│   │   └── generator.py    # LLM answer generation (RunPod)
-│   ├── models/             # Pydantic schemas
-│   ├── utils/              # File parsers (PDF, DOCX, TXT, MD)
-│   └── main.py             # FastAPI entry point
-├── docker-compose.yaml
-└── backend/Dockerfile
+│   ├── api/                  # FastAPI route handlers
+│   ├── service/              # Business logic orchestration
+│   ├── rag/
+│   │   ├── chunker.py        # Text splitting
+│   │   ├── embedder.py       # ONNX embedding inference
+│   │   ├── retriever.py      # FAISS similarity search
+│   │   └── generator.py      # RunPod LLM generation
+│   ├── utils/                # File parsers (PDF, DOCX, TXT)
+│   ├── tests/                # pytest test suite
+│   └── main.py               # FastAPI entry point
+├── .github/workflows/        # CI/CD pipeline
+└── docker-compose.yaml
 ```
 
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Python 3.10–3.11
-- Node.js 18+
-- Docker & Docker Compose
-- RunPod account with API credits
+- Docker and Docker Compose
+- Node.js 18+ (frontend only)
+- A RunPod account with an API key (for LLM answers)
 
-### Backend
+### Run with Docker
 
 ```bash
-# Copy env file and add your RunPod credentials
+# Copy the env template and fill in your RunPod credentials
 cp backend/.env.example backend/.env
 
-# Run with Docker
+# Start the backend (embedding model is downloaded automatically at build time)
 docker compose up backend
 ```
 
-### Frontend
+The API will be available at `http://localhost:8000`.
+
+### Run the frontend
 
 ```bash
 npm install
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` and expects the backend at `http://localhost:8000`.
+The frontend runs at `http://localhost:5173`.
 
-## API Endpoints
+### Run tests locally
 
-| Method | Endpoint      | Description                               |
-| ------ | ------------- | ----------------------------------------- |
-| POST   | `/api/upload` | Upload a document (PDF, TXT, MD, DOCX)    |
-| POST   | `/api/ask`    | Ask a question about an uploaded document |
+```bash
+poetry install --with dev
+poetry run pytest
+poetry run ruff check backend/
+```
+
+## API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+| POST | `/api/upload` | Upload a document (PDF, DOCX, TXT, MD) |
+| POST | `/api/ask` | Ask a question about an uploaded document |
 
 ## How It Works
 
-1. **Upload** — User uploads lecture notes via the web UI
-2. **Parse** — Backend extracts text from the file (PDF, DOCX, TXT, MD)
-3. **Chunk** — Text is split into overlapping segments
-4. **Embed** — Each chunk is converted to a vector using sentence-transformers
-5. **Index** — Vectors are stored in a FAISS index for fast retrieval
-6. **Query** — User asks a question → question is embedded → top-k similar chunks retrieved
-7. **Generate** — Retrieved chunks + question are sent to the LLM on RunPod → answer returned
-
-## Roadmap
-
-- [x] React frontend with file upload and chat UI
-- [x] FastAPI backend with layered architecture
-- [x] RAG pipeline (chunk → embed → retrieve → generate)
-- [x] RunPod LLM integration
-- [x] Docker containerization
-- [ ] MLflow experiment tracking
-- [ ] Airflow pipeline orchestration
-- [ ] Multi-document support
-- [ ] Evaluation metrics (RAGAS, faithfulness, relevance)
-
-## License
-
-MIT
+1. **Upload** — user uploads lecture notes via the web UI
+2. **Parse** — backend extracts raw text from the file
+3. **Chunk** — text is split into overlapping segments
+4. **Embed** — each chunk is converted to a vector using a local ONNX model
+5. **Index** — vectors are stored in a FAISS index
+6. **Query** — question is embedded and matched against the index
+7. **Generate** — top matching chunks are sent to the LLM on RunPod alongside the question
