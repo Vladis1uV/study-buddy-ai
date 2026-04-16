@@ -67,17 +67,17 @@ def test_ask_valid_request_returns_answer(client, mock_qa_service):
     assert body["sources"] == ["chunk 1", "chunk 2"]
 
 
-def test_ask_empty_question_returns_400(client, mock_qa_service):
+def test_ask_empty_question_returns_422(client, mock_qa_service):
     response = client.post(
         "/api/ask",
         json={"document_id": "test-doc-id", "question": ""},
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
 
 
-def test_ask_empty_document_id_returns_400(client, mock_qa_service):
+def test_ask_empty_document_id_returns_422(client, mock_qa_service):
     response = client.post(
         "/api/ask",
         json={"document_id": "", "question": "What is this about?"},
     )
-    assert response.status_code == 400
+    assert response.status_code == 422

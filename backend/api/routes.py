@@ -5,7 +5,7 @@ API Routes - handles HTTP requests and delegates to services.
 import logging
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.service.document_service import DocumentService
 from backend.service.qa_service import QAService
@@ -17,8 +17,8 @@ qa_service = QAService()
 
 
 class AskRequest(BaseModel):
-    document_id: str
-    question: str
+    document_id: str = Field(min_length=1)
+    question: str = Field(min_length=1)
 
 
 class AskResponse(BaseModel):
@@ -42,10 +42,6 @@ async def upload_document(file: UploadFile = File(...)):
 @router.post("/ask", response_model=AskResponse)
 async def ask_question(req: AskRequest):
     """Ask a question about a previously uploaded document."""
-
-    if not req.question or not req.document_id:
-        logging.warning(f"Invalid request: {req}")
-        raise HTTPException(status_code=400, detail="Both document_id and question are required")
 
     answer, sources = qa_service.ask(req.document_id, req.question)
 

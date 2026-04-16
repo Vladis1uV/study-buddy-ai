@@ -30,5 +30,9 @@ model
 __pycache__/
 *.pyc
 
+# Environment variables — never commit real credentials
+.env
+backend/.env
+
 #Claude
 .claude
