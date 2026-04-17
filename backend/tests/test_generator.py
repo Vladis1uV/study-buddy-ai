@@ -3,8 +3,10 @@ Unit tests for the Generator class (RunPod calls are mocked).
 """
 
 from unittest.mock import MagicMock, patch
+
 import pytest
-from backend.rag.generator import Generator, _ASST_HEADER, _EOT
+
+from backend.rag.generator import _ASST_HEADER, _EOT, Generator
 
 
 def _mock_response(status_code: int, json_body: dict) -> MagicMock:
