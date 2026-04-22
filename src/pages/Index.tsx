@@ -5,6 +5,7 @@ import FileUpload from "@/components/FileUpload";
 import ChatMessage, { Message } from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import TypingIndicator from "@/components/TypingIndicator";
+import Iridescence from "@/components/Iridescence";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -75,9 +76,22 @@ const Index = () => {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-mesh">
+    <div className="relative flex h-screen flex-col overflow-hidden">
+      {/* Iridescent shader background */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <Iridescence
+          color={[0.78, 0.72, 1]}
+          speed={0.6}
+          amplitude={0.08}
+          mouseReact={false}
+          className="h-full w-full"
+        />
+        {/* Soft overlay to keep UI legible */}
+        <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
+      </div>
+
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/60 bg-background/70 backdrop-blur-xl px-6 py-3">
+      <header className="relative flex items-center justify-between border-b border-border/40 bg-background/40 backdrop-blur-xl px-6 py-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary text-primary-foreground shadow-glow">
             <Sparkles className="h-5 w-5" />
