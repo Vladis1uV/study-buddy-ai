@@ -1,4 +1,4 @@
-import { Bot, User } from "lucide-react";
+import { Sparkles, User } from "lucide-react";
 
 export interface Message {
   id: string;
@@ -15,19 +15,24 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
   const isUser = message.role === "user";
 
   return (
-    <div className={`flex gap-3 animate-fade-in ${isUser ? "flex-row-reverse" : ""}`}>
+    <div
+      className={`flex gap-3 animate-fade-in ${isUser ? "flex-row-reverse" : ""}`}
+      data-testid={`message-${message.role}`}
+    >
       <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          isUser ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+          isUser
+            ? "bg-secondary text-secondary-foreground"
+            : "bg-gradient-primary text-primary-foreground shadow-glow"
         }`}
       >
-        {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+        {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
       </div>
       <div
-        className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
+        className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
           isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-card border border-border rounded-tl-sm"
+            ? "bg-gradient-primary text-primary-foreground rounded-tr-md shadow-soft"
+            : "bg-card/80 backdrop-blur border border-border/60 rounded-tl-md shadow-soft"
         }`}
       >
         {message.content}
