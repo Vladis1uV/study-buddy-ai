@@ -18,7 +18,7 @@ describe("FileUpload", () => {
   it("renders the dropzone prompt initially", () => {
     render(<FileUpload onFileUploaded={vi.fn()} apiBaseUrl={API} />);
     expect(screen.getByText(/drop your lecture notes here/i)).toBeInTheDocument();
-    expect(screen.getByText(/pdf, txt, md, docx/i)).toBeInTheDocument();
+    expect(screen.getByText(/pdf and docx supported/i)).toBeInTheDocument();
   });
 
   it("uploads a selected file and calls onFileUploaded with the document id", async () => {
