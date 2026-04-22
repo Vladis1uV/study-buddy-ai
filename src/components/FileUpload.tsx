@@ -94,7 +94,7 @@ const FileUpload = ({ onFileUploaded, apiBaseUrl }: FileUploadProps) => {
         <input
           type="file"
           className="absolute inset-0 opacity-0 cursor-pointer"
-          accept=".pdf,.txt,.md,.docx"
+          accept=".pdf,.docx"
           onChange={handleFileSelect}
           disabled={uploading}
         />
@@ -104,7 +104,7 @@ const FileUpload = ({ onFileUploaded, apiBaseUrl }: FileUploadProps) => {
             {uploading ? "Uploading..." : "Drop your lecture notes here"}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            PDF, TXT, MD, DOCX supported
+            PDF and DOCX supported
           </p>
         </div>
       </div>
