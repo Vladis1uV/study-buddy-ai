@@ -33,7 +33,7 @@ describe("FileUpload", () => {
       <FileUpload onFileUploaded={onFileUploaded} apiBaseUrl={API} />,
     );
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(["hello"], "notes.txt", { type: "text/plain" });
+    const file = new File(["hello"], "notes.pdf", { type: "application/pdf" });
 
     await user.upload(fileInput, file);
 
@@ -73,7 +73,7 @@ describe("FileUpload", () => {
       <FileUpload onFileUploaded={vi.fn()} apiBaseUrl={API} />,
     );
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
-    await user.upload(fileInput, new File(["x"], "bad.txt", { type: "text/plain" }));
+    await user.upload(fileInput, new File(["x"], "bad.pdf", { type: "application/pdf" }));
 
     expect(await screen.findByText(/failed to upload file/i)).toBeInTheDocument();
   });
@@ -86,7 +86,7 @@ describe("FileUpload", () => {
       <FileUpload onFileUploaded={vi.fn()} apiBaseUrl={API} />,
     );
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
-    await user.upload(fileInput, new File(["x"], "n.txt", { type: "text/plain" }));
+    await user.upload(fileInput, new File(["x"], "n.pdf", { type: "application/pdf" }));
 
     expect(await screen.findByText(/failed to upload file/i)).toBeInTheDocument();
   });
