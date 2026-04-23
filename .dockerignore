@@ -4,6 +4,9 @@ __pychache__
 *.env
 node_modules
 .cache
+dist
+.vite
+*.log
 
 # Model files are downloaded at build time from HuggingFace
 backend/model
