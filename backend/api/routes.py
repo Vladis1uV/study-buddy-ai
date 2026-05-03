@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from backend.exceptions import FileTooLargeError
 from backend.service.document_service import DocumentService
 from backend.service.qa_service import QAService
 
@@ -14,6 +15,8 @@ router = APIRouter()
 
 document_service = DocumentService()
 qa_service = QAService()
+
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 class AskRequest(BaseModel):
@@ -32,6 +35,9 @@ async def upload_document(file: UploadFile = File(...)):
     if not file.filename:
         logging.warning("Attempting to upload file without a name.")
         raise HTTPException(status_code=400, detail="No filename provided")
+
+    if file.size is not None and file.size > MAX_UPLOAD_BYTES:
+        raise FileTooLargeError(f"{file.filename} is {file.size} bytes (max {MAX_UPLOAD_BYTES})")
 
     content = await file.read()
     document_id = document_service.process_document(file.filename, content)

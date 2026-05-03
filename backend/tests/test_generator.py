@@ -4,8 +4,10 @@ Unit tests for the Generator class (RunPod calls are mocked).
 
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
+from backend.exceptions import LLMTimeoutError, LLMUpstreamError
 from backend.rag.generator import _ASST_HEADER, _EOT, Generator
 
 
@@ -80,7 +82,24 @@ class TestGenerate:
         mock_resp = _mock_response(500, {"error": "internal server error"})
 
         with patch("httpx.post", return_value=mock_resp):
-            with pytest.raises(RuntimeError, match="RunPod error 500"):
+            with pytest.raises(LLMUpstreamError):
+                generator.generate("q", ["ctx"])
+
+    def test_raises_on_timeout(self, generator):
+        with patch("httpx.post", side_effect=httpx.TimeoutException("timed out")):
+            with pytest.raises(LLMTimeoutError):
+                generator.generate("q", ["ctx"])
+
+    def test_raises_on_network_error(self, generator):
+        with patch("httpx.post", side_effect=httpx.ConnectError("connection refused")):
+            with pytest.raises(LLMUpstreamError):
+                generator.generate("q", ["ctx"])
+
+    def test_raises_on_unexpected_response_shape(self, generator):
+        mock_resp = _mock_response(200, {"unexpected": "shape"})
+
+        with patch("httpx.post", return_value=mock_resp):
+            with pytest.raises(LLMUpstreamError):
                 generator.generate("q", ["ctx"])
 
     def test_correct_endpoint_url(self, generator):

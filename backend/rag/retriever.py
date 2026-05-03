@@ -7,6 +7,8 @@ import logging
 import faiss
 import numpy as np
 
+from backend.exceptions import DocumentNotFoundError
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,23 +23,24 @@ class Retriever:
     def retrieve(self, document_id: str, query_embedding: list[float], top_k: int = 3) -> list[str]:
         """Retrieve top-k relevant chunks for a query."""
         if document_id not in self.store:
-            logger.warning(f"Available document IDs: {list(self.store.keys())}")
-            logger.error(f"Document ID not found: {document_id}")
-            raise ValueError(f"Document ID not found: {document_id}")
+            raise DocumentNotFoundError(
+                f"Document ID {document_id} not in store. Known IDs: {list(self.store.keys())}"
+            )
 
-        logger.info(f"Retrieving chunks for document: {document_id}")
         entries = self.store[document_id]
-        logger.info(f"Number of chunks available: {len(entries)}")
+        logger.info(f"Retrieving chunks for document: {document_id} | available: {len(entries)}")
+
+        # Cap top_k to chunk count — FAISS returns -1 for missing slots,
+        # which would silently produce duplicate chunks via Python's negative indexing.
+        top_k = min(top_k, len(entries))
 
         index = faiss.IndexFlatL2(len(entries[0]["embedding"]))
         index.add(np.array([e["embedding"] for e in entries], dtype=np.float32))
 
-        distances, indices = index.search(np.array([query_embedding], dtype=np.float32), top_k)
+        _, indices = index.search(np.array([query_embedding], dtype=np.float32), top_k)
 
-        logger.info(f"{indices.shape[1]} chunks retrieved for document: {document_id}")
-
-        logger.info(f"Shape of indices[0]: {len(indices[0])}")
-        return [entries[i]["text"] for i in indices[0]]  # Should add safe check for indices length
+        logger.info(f"{len(indices[0])} chunks retrieved for document: {document_id}")
+        return [entries[i]["text"] for i in indices[0]]
 
 
 retriever = Retriever()

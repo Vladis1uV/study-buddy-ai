@@ -2,9 +2,14 @@
 LLM response generation via RunPod Serverless (vLLM worker + Llama 3.1 8B Instruct).
 """
 
+import logging
 import os
 
 import httpx
+
+from backend.exceptions import LLMTimeoutError, LLMUpstreamError
+
+logger = logging.getLogger(__name__)
 
 # Llama 3.1 chat template tokens
 _SYS_HEADER = "<|start_header_id|>system<|end_header_id|>"
@@ -54,15 +59,22 @@ class Generator:
             "Content-Type": "application/json",
         }
 
-        response = httpx.post(url, json=payload, headers=headers, timeout=120.0)
-        if response.status_code != 200:
-            raise RuntimeError(f"RunPod error {response.status_code}: {response.text}")
-
-        data = response.json()
         try:
+            response = httpx.post(url, json=payload, headers=headers, timeout=120.0)
+        except httpx.TimeoutException as e:
+            raise LLMTimeoutError(f"RunPod request timed out: {e}") from e
+        except httpx.HTTPError as e:
+            raise LLMUpstreamError(f"RunPod request failed: {e}") from e
+
+        if response.status_code != 200:
+            # Log full body server-side; client gets only the public_message.
+            raise LLMUpstreamError(f"RunPod returned {response.status_code}: {response.text}")
+
+        try:
+            data = response.json()
             full_text = data["output"][0]["choices"][0]["tokens"][0]
-        except (KeyError, IndexError, TypeError) as e:
-            raise RuntimeError(f"Unexpected RunPod response shape: {data}") from e
+        except (KeyError, IndexError, TypeError, ValueError) as e:
+            raise LLMUpstreamError(f"Unexpected RunPod response shape: {response.text[:500]}") from e
 
         # vLLM returns the full text (prompt + completion); extract only the assistant turn
         marker = f"{_ASST_HEADER}\n\n"

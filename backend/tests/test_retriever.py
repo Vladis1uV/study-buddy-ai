@@ -1,5 +1,6 @@
 import pytest
 
+from backend.exceptions import DocumentNotFoundError
 from backend.rag.retriever import Retriever
 
 
@@ -19,7 +20,7 @@ def indexed_retriever(retriever, fake_embedding):
 
 
 def test_retrieve_unknown_document_raises(retriever, fake_embedding):
-    with pytest.raises(ValueError, match="Document ID not found"):
+    with pytest.raises(DocumentNotFoundError):
         retriever.retrieve("nonexistent-id", fake_embedding)
 
 
@@ -32,6 +33,12 @@ def test_index_and_retrieve_returns_chunks(indexed_retriever, fake_embedding):
 def test_retrieve_top_k_limits_results(indexed_retriever, fake_embedding):
     results = indexed_retriever.retrieve("doc-1", fake_embedding, top_k=1)
     assert len(results) == 1
+
+
+def test_retrieve_caps_top_k_to_chunk_count(indexed_retriever, fake_embedding):
+    # Doc has 2 chunks; asking for 10 must return 2, not crash or duplicate.
+    results = indexed_retriever.retrieve("doc-1", fake_embedding, top_k=10)
+    assert len(results) == 2
 
 
 def test_multiple_documents_are_isolated(retriever, fake_embedding):

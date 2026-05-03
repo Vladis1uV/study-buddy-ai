@@ -5,6 +5,7 @@ Document processing service - orchestrates chunking, embedding, and indexing.
 import logging
 import uuid
 
+from backend.exceptions import EmptyDocumentError
 from backend.rag.chunker import DocumentChunker
 from backend.rag.embedder import Embedder
 from backend.rag.retriever import retriever
@@ -28,6 +29,9 @@ class DocumentService:
 
         parser = ParserFactory.get_parser(content)
         text = parser.parse(content)
+
+        if not text.strip():
+            raise EmptyDocumentError(f"No extractable text in {filename}")
 
         logger.info(f"Document parsed successfully: {filename} | ID: {document_id} | Length: {len(text)} characters")
         logger.info(f"Chunking document: {filename} | ID: {document_id}")
