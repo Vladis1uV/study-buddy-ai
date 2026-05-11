@@ -162,7 +162,7 @@ const SummarizePanel = ({ apiBaseUrl }: SummarizePanelProps) => {
             {isLoading ? "Summarizing..." : "Drop your lecture or homework here"}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            We'll return a ~250 word TL;DR you can download as PDF.
+            We'll return a ~500 word TL;DR you can download as PDF.
           </p>
         </div>
       </div>

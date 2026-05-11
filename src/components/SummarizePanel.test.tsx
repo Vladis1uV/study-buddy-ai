@@ -48,7 +48,7 @@ describe("SummarizePanel", () => {
   it("renders the dropzone prompt initially", () => {
     render(<SummarizePanel apiBaseUrl={API} />);
     expect(screen.getByText(/drop your lecture or homework here/i)).toBeInTheDocument();
-    expect(screen.getByText(/250 word/i)).toBeInTheDocument();
+    expect(screen.getByText(/500 word/i)).toBeInTheDocument();
   });
 
   it("posts the file to /api/summarize and renders the returned markdown", async () => {

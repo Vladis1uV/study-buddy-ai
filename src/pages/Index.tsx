@@ -121,8 +121,9 @@ const Index = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         {!documentId ? (
           /* Upload state */
-          <div className="flex flex-1 items-center justify-center p-6">
-            <div className="w-full max-w-lg space-y-8 animate-fade-in">
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-6">
+              <div className="w-full max-w-lg space-y-8 animate-fade-in">
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 backdrop-blur px-3 py-1 text-xs font-medium text-muted-foreground shadow-soft">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-dot" />
@@ -173,6 +174,7 @@ const Index = () => {
                     <div className="text-sm font-medium mt-0.5">{item.text}</div>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           </div>

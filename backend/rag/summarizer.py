@@ -20,13 +20,14 @@ logger = logging.getLogger(__name__)
 SINGLE_SHOT_CHAR_LIMIT = 80_000
 
 # Target output length for the final TL;DR.
-TARGET_WORDS = 250
+TARGET_WORDS = 500
 
 
 def _build_summary_messages(text: str, target_words: int = TARGET_WORDS) -> list[dict]:
     system = (
-        "You are a study assistant that writes concise lecture summaries. "
-        "Produce a single dense paragraph in markdown — no headings, no bullet points. "
+        "You are a study assistant that writes dense, faithful lecture summaries. "
+        "Produce flowing prose in markdown — no headings, no bullet points. Use one to "
+        "three paragraphs as needed. "
         f"Aim for about {target_words} words. Capture the core ideas, key terms, and "
         "the takeaway a student should remember. Do not invent facts not present in the source."
     )
@@ -41,7 +42,8 @@ def _build_reduce_messages(partials: list[str], target_words: int = TARGET_WORDS
     joined = "\n\n---\n\n".join(f"Partial summary {i + 1}:\n{p}" for i, p in enumerate(partials))
     system = (
         "You are a study assistant. You will receive several partial summaries of one document. "
-        "Merge them into a single dense paragraph in markdown — no headings, no bullet points. "
+        "Merge them into flowing prose in markdown — no headings, no bullet points. Use one to "
+        "three paragraphs as needed. "
         f"Aim for about {target_words} words. Remove redundancy, preserve the core ideas."
     )
     return [
