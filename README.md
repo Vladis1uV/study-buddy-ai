@@ -4,7 +4,7 @@ A full-stack RAG (Retrieval-Augmented Generation) application that lets students
 
 ## Goals
 
-- Build an end-to-end MLOps project covering the full lifecycle: data ingestion, vector search, LLM inference, and containerized deployment
+- Build an end-to-end project covering the full lifecycle: data ingestion, vector search, LLM inference, and containerized deployment
 - Keep the stack self-contained and reproducible — the embedding model is baked into the Docker image, no external model servers required
 - Serve as a practical foundation for adding experiment tracking (MLflow) and pipeline orchestration (Airflow)
 

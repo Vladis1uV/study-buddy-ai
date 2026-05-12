@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Settings, Github } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import FileUpload from "@/components/FileUpload";
 import ChatMessage, { Message } from "@/components/ChatMessage";
 import ChatInput from "@/components/ChatInput";
 import TypingIndicator from "@/components/TypingIndicator";
 import Iridescence from "@/components/Iridescence";
+import SummarizePanel from "@/components/SummarizePanel";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -119,8 +121,9 @@ const Index = () => {
       <div className="flex flex-1 flex-col overflow-hidden">
         {!documentId ? (
           /* Upload state */
-          <div className="flex flex-1 items-center justify-center p-6">
-            <div className="w-full max-w-lg space-y-8 animate-fade-in">
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-6">
+              <div className="w-full max-w-lg space-y-8 animate-fade-in">
               <div className="text-center space-y-3">
                 <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/60 backdrop-blur px-3 py-1 text-xs font-medium text-muted-foreground shadow-soft">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse-dot" />
@@ -131,20 +134,35 @@ const Index = () => {
                   <span className="text-gradient-primary">conversations</span>
                 </h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Upload your notes and chat with them. Grounded answers, instantly.
+                  Ask questions about your notes, or get a one-paragraph TL;DR you can save.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-6 shadow-elevated">
-                <FileUpload onFileUploaded={handleFileUploaded} apiBaseUrl={API_BASE_URL} />
-              </div>
+              <Tabs defaultValue="ask" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="ask">Ask</TabsTrigger>
+                  <TabsTrigger value="summarize">Summarize</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="ask" className="mt-4">
+                  <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-6 shadow-elevated">
+                    <FileUpload onFileUploaded={handleFileUploaded} apiBaseUrl={API_BASE_URL} />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="summarize" className="mt-4">
+                  <div className="rounded-2xl border border-border/60 bg-card/70 backdrop-blur-xl p-6 shadow-elevated">
+                    <SummarizePanel apiBaseUrl={API_BASE_URL} />
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { step: "01", text: "Upload notes" },
-                  { step: "02", text: "Auto-embed" },
-                  { step: "03", text: "Ask anything" },
-                  { step: "04", text: "Grounded answers" },
+                  { step: "02", text: "Auto-process" },
+                  { step: "03", text: "Ask or summarize" },
+                  { step: "04", text: "Save as PDF" },
                 ].map((item) => (
                   <div
                     key={item.step}
@@ -156,6 +174,7 @@ const Index = () => {
                     <div className="text-sm font-medium mt-0.5">{item.text}</div>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           </div>
