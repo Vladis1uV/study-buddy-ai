@@ -1,114 +1,107 @@
 """
-Unit tests for the Generator class (RunPod calls are mocked).
+Unit tests for the Generator class (OpenAI client is mocked).
 """
 
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
+from openai import APIError, APITimeoutError
 
 from backend.exceptions import LLMTimeoutError, LLMUpstreamError
-from backend.rag.generator import _ASST_HEADER, _EOT, Generator
+from backend.rag.generator import Generator
 
 
-def _mock_response(status_code: int, json_body: dict) -> MagicMock:
-    mock = MagicMock()
-    mock.status_code = status_code
-    mock.json.return_value = json_body
-    mock.text = str(json_body)
-    return mock
+def _mock_completion(content: str | None) -> MagicMock:
+    """Build a mock that mimics openai.types.chat.ChatCompletion."""
+    message = MagicMock()
+    message.content = content
+    choice = MagicMock()
+    choice.message = message
+    response = MagicMock()
+    response.choices = [choice]
+    return response
 
 
 @pytest.fixture()
 def generator(monkeypatch):
-    monkeypatch.setenv("RUNPOD_API_KEY", "test-key")
-    monkeypatch.setenv("RUNPOD_ENDPOINT_ID", "test-endpoint")
+    monkeypatch.setenv("LLM_BASE_URL", "https://test.example.com/v1")
+    monkeypatch.setenv("LLM_API_KEY", "test-key")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
     return Generator()
 
 
-def _vllm_response(full_text: str) -> dict:
-    return {
-        "output": [{"choices": [{"tokens": [full_text]}], "usage": {"input": 3, "output": 10}}],
-        "status": "COMPLETED",
-    }
-
-
-class TestBuildPrompt:
+class TestBuildMessages:
     def test_includes_context(self, generator):
-        prompt = generator._build_prompt("What is X?", "X is a concept.")
-        assert "X is a concept." in prompt
+        messages = generator._build_messages("What is X?", "X is a concept.")
+        user_content = messages[-1]["content"]
+        assert "X is a concept." in user_content
 
     def test_includes_question(self, generator):
-        prompt = generator._build_prompt("What is X?", "some context")
-        assert "What is X?" in prompt
+        messages = generator._build_messages("What is X?", "some context")
+        user_content = messages[-1]["content"]
+        assert "What is X?" in user_content
 
-    def test_has_llama_chat_tokens(self, generator):
-        prompt = generator._build_prompt("q", "ctx")
-        assert "<|begin_of_text|>" in prompt
-        assert _ASST_HEADER in prompt
-        assert _EOT in prompt
+    def test_has_system_and_user_roles(self, generator):
+        messages = generator._build_messages("q", "ctx")
+        roles = [m["role"] for m in messages]
+        assert roles == ["system", "user"]
 
 
 class TestGenerate:
-    def test_success_extracts_assistant_turn(self, generator):
-        answer_text = "This is the answer."
-        full_text = f"...prompt stuff...{_ASST_HEADER}\n\n{answer_text}"
-        mock_resp = _mock_response(200, _vllm_response(full_text))
-
-        with patch("httpx.post", return_value=mock_resp):
+    def test_returns_completion_content(self, generator):
+        mock = _mock_completion("This is the answer.")
+        with patch.object(generator.client.chat.completions, "create", return_value=mock):
             result = generator.generate("What is X?", ["context chunk"])
+        assert result == "This is the answer."
 
-        assert result == answer_text
-
-    def test_success_strips_whitespace(self, generator):
-        full_text = f"{_ASST_HEADER}\n\n  answer with spaces  "
-        mock_resp = _mock_response(200, _vllm_response(full_text))
-
-        with patch("httpx.post", return_value=mock_resp):
+    def test_strips_whitespace(self, generator):
+        mock = _mock_completion("  answer with spaces  ")
+        with patch.object(generator.client.chat.completions, "create", return_value=mock):
             result = generator.generate("q", ["ctx"])
-
         assert result == "answer with spaces"
 
-    def test_fallback_when_no_marker(self, generator):
-        # If vLLM returns text without the assistant marker, return it as-is
-        mock_resp = _mock_response(200, _vllm_response("raw output"))
-
-        with patch("httpx.post", return_value=mock_resp):
-            result = generator.generate("q", ["ctx"])
-
-        assert result == "raw output"
-
-    def test_raises_on_non_200(self, generator):
-        mock_resp = _mock_response(500, {"error": "internal server error"})
-
-        with patch("httpx.post", return_value=mock_resp):
-            with pytest.raises(LLMUpstreamError):
-                generator.generate("q", ["ctx"])
-
     def test_raises_on_timeout(self, generator):
-        with patch("httpx.post", side_effect=httpx.TimeoutException("timed out")):
+        err = APITimeoutError(request=httpx.Request("POST", "https://test.example.com/v1"))
+        with patch.object(generator.client.chat.completions, "create", side_effect=err):
             with pytest.raises(LLMTimeoutError):
                 generator.generate("q", ["ctx"])
 
-    def test_raises_on_network_error(self, generator):
-        with patch("httpx.post", side_effect=httpx.ConnectError("connection refused")):
+    def test_raises_on_api_error(self, generator):
+        err = APIError(
+            "upstream failed",
+            request=httpx.Request("POST", "https://test.example.com/v1"),
+            body=None,
+        )
+        with patch.object(generator.client.chat.completions, "create", side_effect=err):
             with pytest.raises(LLMUpstreamError):
                 generator.generate("q", ["ctx"])
 
     def test_raises_on_unexpected_response_shape(self, generator):
-        mock_resp = _mock_response(200, {"unexpected": "shape"})
-
-        with patch("httpx.post", return_value=mock_resp):
+        bad = MagicMock()
+        bad.choices = []
+        with patch.object(generator.client.chat.completions, "create", return_value=bad):
             with pytest.raises(LLMUpstreamError):
                 generator.generate("q", ["ctx"])
 
-    def test_correct_endpoint_url(self, generator):
-        full_text = f"{_ASST_HEADER}\n\nanswer"
-        mock_resp = _mock_response(200, _vllm_response(full_text))
+    def test_raises_on_null_content(self, generator):
+        mock = _mock_completion(None)
+        with patch.object(generator.client.chat.completions, "create", return_value=mock):
+            with pytest.raises(LLMUpstreamError):
+                generator.generate("q", ["ctx"])
 
-        with patch("httpx.post", return_value=mock_resp) as mock_post:
+    def test_uses_configured_model(self, generator):
+        mock = _mock_completion("ok")
+        with patch.object(
+            generator.client.chat.completions, "create", return_value=mock
+        ) as mock_create:
             generator.generate("q", ["ctx"])
+        assert mock_create.call_args.kwargs["model"] == "test-model"
 
-        called_url = mock_post.call_args[0][0]
-        assert "test-endpoint" in called_url
-        assert called_url.endswith("/runsync")
+    def test_passes_max_tokens(self, generator):
+        mock = _mock_completion("ok")
+        with patch.object(
+            generator.client.chat.completions, "create", return_value=mock
+        ) as mock_create:
+            generator.generate("q", ["ctx"])
+        assert mock_create.call_args.kwargs["max_tokens"] == 512
