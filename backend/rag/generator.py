@@ -1,83 +1,75 @@
 """
-LLM response generation via RunPod Serverless (vLLM worker + Llama 3.1 8B Instruct).
+LLM response generation via an OpenAI-compatible endpoint
+(e.g. vLLM running on a RunPod Pod, serving Llama 3.1 8B Instruct).
 """
 
 import logging
 import os
 
-import httpx
+from openai import APIError, APITimeoutError, OpenAI
 
 from backend.exceptions import LLMTimeoutError, LLMUpstreamError
 
 logger = logging.getLogger(__name__)
 
-# Llama 3.1 chat template tokens
-_SYS_HEADER = "<|start_header_id|>system<|end_header_id|>"
-_USR_HEADER = "<|start_header_id|>user<|end_header_id|>"
-_ASST_HEADER = "<|start_header_id|>assistant<|end_header_id|>"
-_EOT = "<|eot_id|>"
+_REQUEST_TIMEOUT_S = 120.0
 
 
 class Generator:
     def __init__(self):
-        self.api_key = os.getenv("RUNPOD_API_KEY", "")
-        self.endpoint_id = os.getenv("RUNPOD_ENDPOINT_ID", "")
+        self.base_url = os.getenv("LLM_BASE_URL", "")
+        self.api_key = os.getenv("LLM_API_KEY", "")
+        self.model = os.getenv("LLM_MODEL", "meta-llama/Llama-3.1-8B-Instruct")
+        self.client = OpenAI(
+            base_url=self.base_url,
+            api_key=self.api_key,
+            timeout=_REQUEST_TIMEOUT_S,
+        )
 
-    def _build_prompt(self, question: str, context: str) -> str:
+    def _build_messages(self, question: str, context: str) -> list[dict]:
         system = (
             "You are a helpful study assistant. "
             "Answer the question based ONLY on the provided context from lecture notes. "
             "If the context does not contain enough information, say so."
         )
-        return (
-            f"<|begin_of_text|>{_SYS_HEADER}\n\n"
-            f"{system}{_EOT}"
-            f"{_USR_HEADER}\n\n"
-            f"Context:\n{context}\n\nQuestion: {question}{_EOT}"
-            f"{_ASST_HEADER}\n\n"
-        )
+        user = f"Context:\n{context}\n\nQuestion: {question}"
+        return [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+
+    def complete(
+        self,
+        messages: list[dict],
+        max_tokens: int = 512,
+        temperature: float = 0.7,
+    ) -> str:
+        """Run a single chat completion and return the assistant's reply."""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                top_p=0.9,
+            )
+        except APITimeoutError as e:
+            raise LLMTimeoutError(f"LLM request timed out: {e}") from e
+        except APIError as e:
+            raise LLMUpstreamError(f"LLM request failed: {e}") from e
+
+        try:
+            content = response.choices[0].message.content
+        except (AttributeError, IndexError) as e:
+            raise LLMUpstreamError(f"Unexpected LLM response shape: {response}") from e
+
+        if content is None:
+            raise LLMUpstreamError(f"LLM returned empty content: {response}")
+
+        return content.strip()
 
     def generate(self, question: str, context_chunks: list[str]) -> str:
-        """Generate an answer using Llama 3.1 8B Instruct on RunPod Serverless."""
+        """Generate an answer for a RAG query using the configured LLM."""
         context = "\n\n".join(context_chunks)
-        prompt = self._build_prompt(question, context)
-
-        url = f"https://api.runpod.ai/v2/{self.endpoint_id}/runsync"
-        payload = {
-            "input": {
-                "prompt": prompt,
-                "sampling_params": {
-                    "max_tokens": 512,
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "stop": [_EOT],
-                },
-            }
-        }
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
-
-        try:
-            response = httpx.post(url, json=payload, headers=headers, timeout=120.0)
-        except httpx.TimeoutException as e:
-            raise LLMTimeoutError(f"RunPod request timed out: {e}") from e
-        except httpx.HTTPError as e:
-            raise LLMUpstreamError(f"RunPod request failed: {e}") from e
-
-        if response.status_code != 200:
-            # Log full body server-side; client gets only the public_message.
-            raise LLMUpstreamError(f"RunPod returned {response.status_code}: {response.text}")
-
-        try:
-            data = response.json()
-            full_text = data["output"][0]["choices"][0]["tokens"][0]
-        except (KeyError, IndexError, TypeError, ValueError) as e:
-            raise LLMUpstreamError(f"Unexpected RunPod response shape: {response.text[:500]}") from e
-
-        # vLLM returns the full text (prompt + completion); extract only the assistant turn
-        marker = f"{_ASST_HEADER}\n\n"
-        if marker in full_text:
-            return full_text.split(marker)[-1].strip()
-        return full_text.strip()
+        messages = self._build_messages(question, context)
+        return self.complete(messages, max_tokens=512)

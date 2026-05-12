@@ -20,13 +20,12 @@ class Embedder:
         logger.info(f"Loading ONNX embedding model from: {model_path}")
         self.tokenizer = AutoTokenizer.from_pretrained(str(model_path))
         self.session = ort.InferenceSession(str(model_path / "model.onnx"))
-        logger.info("ONNX model loaded successfully.")
+        self._input_names = {inp.name for inp in self.session.get_inputs()}
+        logger.info(f"ONNX model loaded; inputs={sorted(self._input_names)}")
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings for a list of texts."""
         inputs = self.tokenizer(texts, padding=True, truncation=True, return_tensors="np")
-        outputs = self.session.run(
-            ["sentence_embedding"],
-            {"input_ids": inputs["input_ids"], "attention_mask": inputs["attention_mask"]},
-        )
+        feed = {name: inputs[name] for name in self._input_names if name in inputs}
+        outputs = self.session.run(["sentence_embedding"], feed)
         return outputs[0].tolist()

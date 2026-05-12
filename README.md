@@ -17,7 +17,7 @@ A full-stack RAG (Retrieval-Augmented Generation) application that lets students
 | Embeddings | ONNX Runtime (all-MiniLM-L6-v2) |
 | Vector search | FAISS |
 | Document parsing | pdfplumber, python-docx |
-| LLM inference | RunPod (serverless GPU) |
+| LLM inference | vLLM on RunPod Pod (OpenAI-compatible API) |
 | Containerization | Docker, Docker Compose |
 | CI/CD | GitHub Actions, GHCR |
 
@@ -35,7 +35,7 @@ A full-stack RAG (Retrieval-Augmented Generation) application that lets students
 │   │   ├── chunker.py        # Text splitting
 │   │   ├── embedder.py       # ONNX embedding inference
 │   │   ├── retriever.py      # FAISS similarity search
-│   │   └── generator.py      # RunPod LLM generation
+│   │   └── generator.py      # LLM generation via OpenAI-compatible client
 │   ├── utils/                # File parsers (PDF, DOCX, TXT)
 │   ├── tests/                # pytest test suite
 │   ├── main.py               # FastAPI entry point
@@ -51,12 +51,12 @@ A full-stack RAG (Retrieval-Augmented Generation) application that lets students
 
 - Docker and Docker Compose
 - Node.js 18+ (frontend only)
-- A RunPod account with an API key (for LLM answers)
+- A reachable OpenAI-compatible LLM endpoint (e.g. vLLM on a RunPod Pod)
 
 ### Run with Docker (full stack, one terminal)
 
 ```bash
-# Copy the env template and fill in your RunPod credentials
+# Copy the env template and fill in your LLM endpoint URL + API key
 cp backend/.env.example backend/.env
 
 # Build and start both services (backend + frontend)
@@ -140,4 +140,4 @@ Test files live next to components as `*.test.tsx` and are picked up by
 4. **Embed** — each chunk is converted to a vector using a local ONNX model
 5. **Index** — vectors are stored in a FAISS index
 6. **Query** — question is embedded and matched against the index
-7. **Generate** — top matching chunks are sent to the LLM on RunPod alongside the question
+7. **Generate** — top matching chunks are sent to the LLM (vLLM Pod) alongside the question
